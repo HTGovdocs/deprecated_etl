@@ -9,6 +9,8 @@ require 'traject/indexer/settings'
 @@gd_ids_processed = []
 @@count = 0
 
+#minimum score to be considered a dupe
+@@dupe_cutoff = 0.5 
 
 @@client = HTTPClient.new
 @@solr_update_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/collection1/update?wt=json'
@@ -78,8 +80,8 @@ end
 def get_relationships( doc_id )
   rels = []
   @@get_relationships_sql = "SELECT * FROM tmp_relationships
-                             WHERE govdoc_id = ? AND (relationship != 'duplicates' OR score < 0.5)"
-  @@conn.prepared_select(@@get_relationships_sql, [doc_id]) do |row|
+                             WHERE govdoc_id = ? AND (relationship != 'duplicates' OR score < ?)"
+  @@conn.prepared_select(@@get_relationships_sql, [doc_id, @@dupe_cutoff]) do |row|
     rels << row.get_object('cluster_id')
   end
   return rels
@@ -128,7 +130,7 @@ cluster_report.each_with_index do | line, line_num |
   parts = line.chomp.split(/\t/)
   #PP.pp parts
   puts parts[1]
-  if parts[0] == 'duplicates' and parts[1].to_f >= 0.5
+  if parts[0] == 'duplicates' and parts[1].to_f >= @@dupe_cutoff 
     score = parts[1]
     ids = parts[2].split(',')
     #puts build_record(ids).to_json

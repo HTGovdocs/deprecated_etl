@@ -1,0 +1,87 @@
+{
+  "/htdata/govdocs/marc/hathi/zephir_full_20141231_only_govdocs.json":{
+      "oclc":["035 a"],
+      "items":["974"],
+      "chronology":["y"],
+      "enumeration":["z"]
+    },
+  "/htdata/govdocs/marc/minnesota/all_minn_records.ndj":{
+      "oclc":["035 a"],
+      "items":["974"],
+      "chronology":[],
+      "enumeration":["z"]
+  
+   },
+  "/htdata/govdocs/MARC/extracted_json_fixed/arizona20140207.ndj":{
+      "oclc":["001 a"],
+      "items":["945"],
+      "chronology":[],
+      "enumeration":["c"]
+  },
+  "/htdata/govdocs/marc/umich/umich_converted_20150415.ndj":{
+      "oclc":["035 a"],
+      "items":["974"],
+      "chronology":[],
+      "enumeration":["z"]
+  },
+  "/htdata/govdocs/marc/CIC/CIC_all.ndj":{
+      "oclc":["001 a"],
+      "items":[],
+      "chronology":[],
+      "enumeration":[]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/gmu.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":[],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/uchicago.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":[],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/northwestern.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":["y"],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/baylor.ndj":{
+      "oclc":["001 a"],
+      "items":["945"],
+      "chronology":[],
+      "enumeration":["a","f"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/tamu.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":[],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/harvard.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":[],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/nypl.ndj":{
+      "oclc":["001 a", "035 a"],
+      "items":["945"],
+      "chronology":[],
+      "enumeration":["c"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/mit.ndj":{
+      "oclc":["035 a"],
+      "items":["955"],
+      "chronology":[],
+      "enumeration":["v"]
+  },
+  "/htdata/govdocs/MARC/extracted_json_fixed/MeWC-20131002-0300.xml.ndj":{
+      "oclc":["001 a"],
+      "items":["945"],
+      "chronology":[],
+      "enumeration":["c"]
+  }
+}
