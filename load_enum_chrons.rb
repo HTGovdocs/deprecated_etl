@@ -1,6 +1,9 @@
 require 'json'
 require 'htph'
 
+#!!!!!!!
+#deprecated. Not used. Just using the table in ht_repository. 
+
 defs = JSON.parse(open('source_defs.json', 'r').read)
 
 @@jdbc = HTPH::Hathijdbc::Jdbc.new();
