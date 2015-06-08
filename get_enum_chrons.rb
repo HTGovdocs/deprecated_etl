@@ -1,5 +1,7 @@
 require 'json'
 
+#!!!!!!!
+#deprecated. Not used. Just using the table in ht_repository. 
 defs = JSON.parse(open('source_defs.json', 'r').read)
 
 source_file = ARGV.shift
