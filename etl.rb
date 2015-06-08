@@ -4,9 +4,9 @@ require 'marc'
 require 'httpclient'
 require 'traject'
 require 'traject/indexer/settings'
+require 'pp'
 
 #keep track of what we've used
-@@gd_ids_processed = []
 @@count = 0
 
 #minimum score to be considered a dupe
@@ -15,39 +15,39 @@ require 'traject/indexer/settings'
 @@client = HTTPClient.new
 @@solr_update_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/collection1/update?wt=json'
 
-def build_record ids
+@@solr_source_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/raw_source/select?wt=json&q='
+@@indexer = Traject::Indexer.new
+@@indexer.load_config_file('traject_config.rb')
 
+def build_record ids
   doc_id = ids.shift
-  @@gd_ids_processed << doc_id
+  set_processed( doc_id )
   @@count += 1
   source, src_file = get_source_rec( doc_id )
   base_marc = MARC::Record.new_from_hash(JSON.parse(source))
 
-  @@indexer = Traject::Indexer.new
-  @@indexer.load_config_file('traject_config.rb')
- 
+   
   rec = @@indexer.map_record(base_marc)
 
   rec['id'] = doc_id
 
-  rec['source_records'] = {doc_id=>source}
+  rec['source_records'] = [source]
  
   #get the enumchron from the database
   rec['enumchron_display'] = get_enumchron(doc_id)
 
   rec['ht_ids'] = []
-  if src_file =~ /zeph/
+  if src_file =~ /zeph/ and source =~ /"r":"pd"/
     rec['ht_ids'] << get_ht_id(source)
   end
 
   #only duplicate clusters need to worry about this
   ids.each do | id | 
     src, src_file = get_source_rec( id )
-    rec['source_records'][id] = src 
-    if src_file =~ /zeph/
+    rec['source_records'] << src 
+    if src_file =~ /zeph/ and source =~ /.r.:.pd./
       rec['ht_ids'] << get_ht_id(src)
     end
-    @@gd_ids_processed << id 
   end
 
   rec['relationships'] = get_relationships( doc_id )
@@ -58,8 +58,25 @@ def build_record ids
 
 end
 
+def set_processed( doc_id )
+  @@set_etld_sql = "INSERT INTO etld_govdocs (govdoc_id) VALUES(?)"
+  @@conn.prepared_update(@@set_etld_sql, [doc_id])
+end
+
+#we need a list of already processed govdocs
+#Just the ids so keep them in memory
+def get_processed( )
+  processed = {}
+  @@get_etld_sql = "SELECT * FROM etld_govdocs"
+  @@conn.prepared_select(@@get_etld_sql, []) do | row |
+    processed[row.get_object('govdoc_id')] = 1 
+  end
+  return processed
+end 
+
 def get_ht_id( rec )
   id = /"001":"(\d+)"/.match(rec)[1]
+  puts "ht_id: #{id}"
   return id
 rescue
   PP.pp rec
@@ -96,21 +113,28 @@ def get_source_rec( doc_id )
   fname = ''
   @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
     fname = row.get_object('file_path')
-    fname.sub!(/\.gz$/, '')
-    lineno = row.get_object('lineno').to_i + 1 #line numbers seem to be off by 1
-  
-    line = `awk 'NR==#{lineno}{print;exit}' #{fname}`
-    line = line.split("\n")[0].chomp
+    fname = fname.sub(/\.gz$/, '').split('/').pop
+    lineno = row.get_object('lineno').to_i
+    s_id = "#{fname}_#{lineno}"
+
+    resp = @@client.get @@solr_source_url+s_id
+    line = JSON.parse(resp.body)['response']['docs'][0]['text'][0]
+
+    #this stuff was way too slow
+    #line = `awk 'NR==#{lineno}{print;exit}' #{fname}`
+    #line = line.split("\n")[0].chomp
   end
   if line == '' || fname == ''
     STDERR.puts "doc_id: #{doc_id}"
   end
-  return line, fname
+  return line.chomp!, fname
 end
 
 def solr_index rec
-  resp = @@client.post @@solr_update_url, [rec].to_json, "Content-Type"=>"application/json"
-  #PP.pp resp.status
+  #PP.pp rec
+  rec['marc_display'] = rec['source_records'][0]
+  resp = @@client.post @@solr_update_url, [rec].to_json, "content-type"=>"application/json"
+  #pp.pp resp
 end
 
 
@@ -121,19 +145,21 @@ end
 finname = ARGV.shift
 cluster_report = open(finname)
 
-#foutname = ARGV.shift
+#foutname = argv.shift
 #outfile = open(foutname, 'w')
 
 start = Time.now
 
+processed = get_processed()
+
 cluster_report.each_with_index do | line, line_num |
+  
   parts = line.chomp.split(/\t/)
-  #PP.pp parts
-  puts parts[1]
   if parts[0] == 'duplicates' and parts[1].to_f >= @@dupe_cutoff 
     score = parts[1]
     ids = parts[2].split(',')
     #puts build_record(ids).to_json
+    next if processed.has_key? ids[0] 
     solr_index build_record(ids)
   else
     if parts[0] == 'duplicates' 
@@ -141,17 +167,20 @@ cluster_report.each_with_index do | line, line_num |
     else
       ids = parts[1].split(',')
     end
-    ids.each { |id| solr_index build_record([id]) }
+    ids.each do |id| 
+      if !processed.has_key? id 
+        solr_index build_record([id])  
+      end
+    end
   end
 
-  if @@count >= 2500 
-    break
+  if @@count % 1000 == 1
+    puts @@count
   end
 
-  
 end
 
 duration = Time.now - start
-puts 'processed: '+@@gd_ids_processed.count.to_s
+puts 'processed: '+@@count.to_s
 puts 'duration: '+duration.to_s
 
