@@ -74,19 +74,19 @@ to_field "publisher_t",         extract_marc("260b")
 #to_field "publisher_t",        extract_marc("260abef:261abef:262ab:264ab")
 
 #place of publication
-to_field "published_display",   extract_marc("260a", :trim_punctuation => true)
+to_field "published_display",   extract_marc("260a:264|1*|abc", :trim_punctuation => true)
 
 #pubdate
 to_field "pub_date",            marc_publication_date
 
 #sudoc
-to_field "sudoc_display",       extract_marc("sudoc")
+to_field "sudoc_display",       extract_marc("086a")
 
 #lc call number
 to_field "lc_callnum_display",  extract_marc("050ab")
 
 #physical description 300
-to_field "material_type_display", extract_marc("300a", :separator => nil, :trim_punctuation => true)
+to_field "material_type_display", extract_marc("300")
 
 
 #OCLC number
