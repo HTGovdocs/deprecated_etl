@@ -13,11 +13,21 @@ require 'pp'
 @@dupe_cutoff = 0.5 
 
 @@client = HTTPClient.new
-@@solr_update_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/collection1/update?wt=json'
+@@solr_update_url = 'http://buzz.umdl.umich.edu:9035/usfeddocs/collection1/update?wt=json'
 
 @@solr_source_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/raw_source/select?wt=json&q='
 @@indexer = Traject::Indexer.new
 @@indexer.load_config_file('traject_config.rb')
+
+@@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd hg 
+                  LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
+                 WHERE hg.id = ? LIMIT 1"
+@@set_etld_sql = "INSERT INTO etld_govdocs (govdoc_id) VALUES(?)"
+@@get_enumchron_sql = "SELECT * FROM hathi_enumc 
+                        LEFT JOIN hathi_str hs ON hathi_enumc.str_id = hs.id  
+                       WHERE gd_id = ? LIMIT 1"
+@@get_relationships_sql = "SELECT * FROM tmp_relationships
+                           WHERE govdoc_id = ? AND (relationship != 'duplicates' OR score < ?)"
 
 def build_record ids
   doc_id = ids.shift
@@ -26,6 +36,7 @@ def build_record ids
   source, src_file = get_source_rec( doc_id )
   base_marc = MARC::Record.new_from_hash(JSON.parse(source))
 
+  puts src_file
    
   rec = @@indexer.map_record(base_marc)
 
@@ -44,6 +55,7 @@ def build_record ids
   #only duplicate clusters need to worry about this
   ids.each do | id | 
     src, src_file = get_source_rec( id )
+    puts src_file
     rec['source_records'] << src 
     if src_file =~ /zeph/ and source =~ /.r.:.pd./
       rec['ht_ids'] << get_ht_id(src)
@@ -59,7 +71,6 @@ def build_record ids
 end
 
 def set_processed( doc_id )
-  @@set_etld_sql = "INSERT INTO etld_govdocs (govdoc_id) VALUES(?)"
   @@conn.prepared_update(@@set_etld_sql, [doc_id])
 end
 
@@ -85,9 +96,6 @@ end
   
 def get_enumchron( doc_id )
   enumchron = ''
-  @@get_enumchron_sql = "SELECT * FROM hathi_enumc 
-                          LEFT JOIN hathi_str hs ON hathi_enumc.str_id = hs.id  
-                         WHERE gd_id = ? LIMIT 1"
   @@conn.prepared_select(@@get_enumchron_sql, [doc_id]) do | row |
     enumchron = row.get_object('str')
   end
@@ -96,8 +104,6 @@ end
 
 def get_relationships( doc_id )
   rels = []
-  @@get_relationships_sql = "SELECT * FROM tmp_relationships
-                             WHERE govdoc_id = ? AND (relationship != 'duplicates' OR score < ?)"
   @@conn.prepared_select(@@get_relationships_sql, [doc_id, @@dupe_cutoff]) do |row|
     rels << row.get_object('cluster_id')
   end
@@ -106,9 +112,6 @@ end
          
 
 def get_source_rec( doc_id )
-  @@get_rec_sql = "SELECT hf.file_path, hg.lineno FROM hathi_gd hg 
-                    LEFT JOIN hathi_input_file hf ON hg.file_id = hf.id
-                   WHERE hg.id = ? LIMIT 1"
   line = '' 
   fname = ''
   @@conn.prepared_select(@@get_rec_sql, [doc_id]) do | row | #should just be one, unless I did something stupid
@@ -174,9 +177,12 @@ cluster_report.each_with_index do | line, line_num |
     end
   end
 
-  if @@count % 1000 == 1
-    puts @@count
+  if line_num % 10000 == 0
+    puts "Line number: #{line_num}, count: #{@@count}"
   end
+  #if @@count % 1000 == 1
+  #  puts @@count
+  #end
 
 end
 

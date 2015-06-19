@@ -94,7 +94,7 @@ to_field "oclcnum_t",           oclcnum
 
 
 #series titles [4xx, 830]
-to_field "title_series_t",      extract_marc("440a:490a:800abcdt:400abcd:810abcdt:410abcd:811acdeft:411acdef:830adfgklmnoprst:760ast:762ast")
+to_field "title_series_t",      extract_marc("440a:490av:800abcdt:400abcd:810abcdt:410abcd:811acdeft:411acdef:830adfgklmnoprstv:760ast:762ast")
 
 
 #enum/chron
