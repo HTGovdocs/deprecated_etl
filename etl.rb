@@ -13,7 +13,7 @@ require 'pp'
 @@dupe_cutoff = 0.5 
 
 @@client = HTTPClient.new
-@@solr_update_url = 'http://buzz.umdl.umich.edu:9035/usfeddocs/collection1/update?wt=json'
+@@solr_update_url = 'http://solr-sdr-usfeddocs-dev:9035/usfeddocs/collection1/update?wt=json'
 
 @@solr_source_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/raw_source/select?wt=json&q='
 @@indexer = Traject::Indexer.new
@@ -36,7 +36,6 @@ def build_record ids
   source, src_file = get_source_rec( doc_id )
   base_marc = MARC::Record.new_from_hash(JSON.parse(source))
 
-  puts src_file
    
   rec = @@indexer.map_record(base_marc)
 
@@ -49,16 +48,21 @@ def build_record ids
 
   rec['ht_ids'] = []
   if src_file =~ /zeph/ and source =~ /"r":"pd"/
-    rec['ht_ids'] << get_ht_id(source)
+    ht_id = get_ht_id(source)
+    unless rec['ht_ids'].include? ht_id 
+      rec['ht_ids'] << ht_id 
+    end
   end
 
   #only duplicate clusters need to worry about this
   ids.each do | id | 
     src, src_file = get_source_rec( id )
-    puts src_file
     rec['source_records'] << src 
     if src_file =~ /zeph/ and source =~ /.r.:.pd./
-      rec['ht_ids'] << get_ht_id(src)
+      ht_id = get_ht_id(source)
+      unless rec['ht_ids'].include? ht_id 
+        rec['ht_ids'] << ht_id 
+      end
     end
   end
 
@@ -177,7 +181,7 @@ cluster_report.each_with_index do | line, line_num |
     end
   end
 
-  if line_num % 10000 == 0
+  if line_num % 10000 == 0 || @@count % 1000 == 0
     puts "Line number: #{line_num}, count: #{@@count}"
   end
   #if @@count % 1000 == 1
