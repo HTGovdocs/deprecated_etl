@@ -46,11 +46,21 @@ def build_record ids
   #get the enumchron from the database
   rec['enumchron_display'] = get_enumchron(doc_id)
 
-  rec['ht_ids'] = []
+  rec['ht_ids_fv'] = []
+  rec['ht_ids_lv'] = []
+  #in HT and full view, public domain
   if src_file =~ /zeph/ and source =~ /"r":"pd"/
     ht_id = get_ht_id(source)
-    unless rec['ht_ids'].include? ht_id 
-      rec['ht_ids'] << ht_id 
+    rec['ht_availability'] = 'full view'
+    unless rec['ht_ids_fv'].include? ht_id 
+      rec['ht_ids_fv'] << ht_id 
+    end
+  #in HT but restricted
+  elsif src_file =~ /zeph/
+    ht_id = get_ht_id(source)
+    rec['ht_availability'] = 'limited view' unless rec['ht_availability'] == 'full view'
+    unless rec['ht_ids_lv'].include? ht_id 
+      rec['ht_ids_lv'] << ht_id 
     end
   end
 
@@ -58,10 +68,19 @@ def build_record ids
   ids.each do | id | 
     src, src_file = get_source_rec( id )
     rec['source_records'] << src 
+    #in HT and full view, public domain
     if src_file =~ /zeph/ and source =~ /.r.:.pd./
       ht_id = get_ht_id(source)
-      unless rec['ht_ids'].include? ht_id 
-        rec['ht_ids'] << ht_id 
+      rec['ht_availability'] = 'full view'
+      unless rec['ht_ids_fv'].include? ht_id 
+        rec['ht_ids_fv'] << ht_id 
+      end
+    #in HT but restricted
+    elsif src_file =~ /zeph/
+      ht_id = get_ht_id(source)
+      rec['ht_availability'] = 'limited view' unless rec['ht_availability'] == 'full view'
+      unless rec['ht_ids_lv'].include? ht_id 
+        rec['ht_ids_lv'] << ht_id 
       end
     end
   end
@@ -157,7 +176,8 @@ cluster_report = open(finname)
 
 start = Time.now
 
-processed = get_processed()
+#processed = get_processed()
+processed = {} 
 
 cluster_report.each_with_index do | line, line_num |
   
