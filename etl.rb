@@ -49,7 +49,7 @@ def build_record ids
   rec['ht_ids_fv'] = []
   rec['ht_ids_lv'] = []
   #in HT and full view, public domain
-  if src_file =~ /zeph/ and source =~ /"r":"pd"/
+  if src_file =~ /zeph/ and source =~ /.r.:.pd./
     ht_id = get_ht_id(source)
     rec['ht_availability'] = 'full view'
     unless rec['ht_ids_fv'].include? ht_id 
@@ -64,20 +64,22 @@ def build_record ids
     end
   end
 
+  #adding additional source records to cluster
   #only duplicate clusters need to worry about this
+  #we could ignore this if not for the ht aspect
   ids.each do | id | 
     src, src_file = get_source_rec( id )
     rec['source_records'] << src 
     #in HT and full view, public domain
-    if src_file =~ /zeph/ and source =~ /.r.:.pd./
-      ht_id = get_ht_id(source)
+    if src_file =~ /zeph/ and src =~ /.r.:.pd./
+      ht_id = get_ht_id(src)
       rec['ht_availability'] = 'full view'
       unless rec['ht_ids_fv'].include? ht_id 
         rec['ht_ids_fv'] << ht_id 
       end
     #in HT but restricted
     elsif src_file =~ /zeph/
-      ht_id = get_ht_id(source)
+      ht_id = get_ht_id(src)
       rec['ht_availability'] = 'limited view' unless rec['ht_availability'] == 'full view'
       unless rec['ht_ids_lv'].include? ht_id 
         rec['ht_ids_lv'] << ht_id 
@@ -182,13 +184,14 @@ processed = {}
 cluster_report.each_with_index do | line, line_num |
   
   parts = line.chomp.split(/\t/)
+  #duplicate cluster 
   if parts[0] == 'duplicates' and parts[1].to_f >= @@dupe_cutoff 
     score = parts[1]
     ids = parts[2].split(',')
     #puts build_record(ids).to_json
     next if processed.has_key? ids[0] 
     solr_index build_record(ids)
-  else
+  else #nonduplicate, either from solo/relationship file or below cutoff
     if parts[0] == 'duplicates' 
       ids = parts[2].split(',')
     else
