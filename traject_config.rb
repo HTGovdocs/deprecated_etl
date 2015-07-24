@@ -108,6 +108,13 @@ to_field "subject_topic_facet",           extract_marc("600:610:611:630:650:651a
 #format
 to_field "format",              marc_formats
 
-
+to_field "isbn_t",		extract_marc('020a', :separator=>nil) do |rec, acc|
+     orig = acacc.dup
+     acc.map!{|x| StdNum::ISBN.allNormalizedValues(x)}
+     acc << orig
+     acc.flatten!
+     acc.uniq!
+end
+	
 
 
