@@ -1,3 +1,5 @@
+#deprecated. don't use this. or use "etl.rb" for something that isn't broken
+
 require 'json'
 require 'htph'
 require 'marc'
@@ -178,8 +180,7 @@ cluster_report = open(finname)
 
 start = Time.now
 
-#processed = get_processed()
-processed = {} 
+processed = get_processed()
 
 cluster_report.each_with_index do | line, line_num |
   
@@ -191,6 +192,7 @@ cluster_report.each_with_index do | line, line_num |
     #puts build_record(ids).to_json
     next if processed.has_key? ids[0] 
     solr_index build_record(ids)
+    processed[id] = 1
   else #nonduplicate, either from solo/relationship file or below cutoff
     if parts[0] == 'duplicates' 
       ids = parts[2].split(',')
@@ -200,6 +202,7 @@ cluster_report.each_with_index do | line, line_num |
     ids.each do |id| 
       if !processed.has_key? id 
         solr_index build_record([id])  
+        processed[id] = 1
       end
     end
   end
