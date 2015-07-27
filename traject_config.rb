@@ -1,4 +1,5 @@
 require 'pp'
+require 'library_stdnums'
 
 # A sample traject configration, save as say `traject_config.rb`, then
 # run `traject -c traject_config.rb marc_file.marc` to index to
@@ -61,8 +62,8 @@ end
 
 to_field "author_t",            extract_marc("100abcdgqu:110abcdgnu:111acdegjnqu")
 to_field "author_addl_t",       extract_marc("700abcdegqu:710abcdegnu:711acdegjnqu:720a:505r:245c:191abcdegqu")
-to_field "author_display",      extract_marc("100abcdq:110:111")
-to_field "author_display_facet",      extract_marc("100abcdq:110:111")
+to_field "author_display",      extract_marc("100abcdq:110abcdgnu:111acdegjnqu")
+to_field "author_display_facet",      extract_marc("100abcdq:110abcdgnu:111acdegjnqu")
 to_field "author_sort",         marc_sortable_author
 
 #not needed
@@ -109,7 +110,7 @@ to_field "subject_topic_facet",           extract_marc("600:610:611:630:650:651a
 to_field "format",              marc_formats
 
 to_field "isbn_t",		extract_marc('020a', :separator=>nil) do |rec, acc|
-     orig = acacc.dup
+     orig = acc.dup
      acc.map!{|x| StdNum::ISBN.allNormalizedValues(x)}
      acc << orig
      acc.flatten!
