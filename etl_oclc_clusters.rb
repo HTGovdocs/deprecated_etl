@@ -11,7 +11,7 @@ class GDIndexer
 
   def initialize()
     @client = HTTPClient.new
-    @solr_update_url = 'http://solr-sdr-usfeddocs-dev:9035/usfeddocs/collection1/update?wt=json'
+    @solr_update_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/collection1/update?wt=json'
 
     @solr_source_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/raw_source/select?wt=json&q='
     @extractor = Traject::Indexer.new
