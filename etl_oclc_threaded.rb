@@ -26,12 +26,9 @@ collators = []
     c = Collator.new()
     while foreman.status or !q.empty? 
       o_str_id, e_str_id, gd_ids = q.pop.chomp.split(/\t/)
-      if e_str_id == 'NULL'
-        e_str_id = false
-      end
       ids = gd_ids.split(',') 
 
-      @fout.puts c.build_record(ids, o_str_id, e_str_id).to_json
+      @fout.puts c.build_record(ids).to_json
     end
     @log.puts 'source_rec: '+c.source_rec_timer.to_s
     @log.puts 'marchash: '+c.marc_hash_timer.to_s

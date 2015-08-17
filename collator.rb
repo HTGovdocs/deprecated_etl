@@ -23,7 +23,9 @@ class Collator
     @sources_sql = "SELECT s.source, s.file_path, hg.id as doc_id FROM hathi_gd hg
                      LEFT JOIN gd_source_recs s ON s.file_input_id = hg.file_id AND s.line_number = hg.lineno
                     WHERE hg.id IN(?)" 
-    @get_enumchron_sql = "SELECT * FROM hathi_str WHERE id = ? LIMIT 1"
+    @get_enumchron_sql = "SELECT DISTINCT(hs.str) as enum_chron FROM hathi_enumc he
+                     LEFT JOIN hathi_str hs ON he.str_id = hs.id 
+                     WHERE he.gd_id IN(?) LIMIT 1"
 
     @id_log = open("ids.log.tmp","w")
 
@@ -34,17 +36,13 @@ class Collator
   end
 
 
-  def build_record ids, o_str_id, e_str_id
+  def build_record ids
     rec = {}
     rec['source_records'] = []
     sources = self.get_sources( ids )
     
     #get the enumchron from the database
-    if e_str_id 
-      rec['enumchron_display'] = self.get_enumchron(e_str_id)
-    else
-      rec['enumchron_display'] = ''
-    end
+    rec['enumchron_display'] = self.get_enumchron(ids)
 
     rec['ht_ids_fv'] = []
     rec['ht_ids_lv'] = []
@@ -101,11 +99,11 @@ class Collator
     raise
   end
     
-  def get_enumchron( e_str_id )
+  def get_enumchron( gd_ids )
     enumchron = ''
-    ss = @get_enumchron_sql.gsub(/\?/, e_str_id) #yuck
+    ss = @get_enumchron_sql.gsub(/\?/, gd_ids.join(',')) #yuck
     @conn.query(ss) do | row |
-      enumchron = row[:str]
+      enumchron = row[:enum_chron]
     end
     return enumchron
   end
