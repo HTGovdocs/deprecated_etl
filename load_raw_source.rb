@@ -1,14 +1,14 @@
-#deprecated. no longer keep this in solr
 require 'json'
 require 'httpclient'
+require 'htph'
 
-#keep track of what we've used
-@@gd_ids_processed = []
-@@count = 0
+@jdbc = HTPH::Hathijdbc::Jdbc.new()
+@conn = @jdbc.get_conn()
+@add_rec = "INSERT INTO gd_source_recs
+              (file_path, line_number, source)
+            VALUES(?,?,?)"
 
-
-@@client = HTTPClient.new
-@@solr_update_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/raw_source/update?wt=json'
+@count = 0
 
 start = Time.now
 count = 0
@@ -17,20 +17,11 @@ sources = JSON.parse(open(ARGV.shift, 'r').read)
 
 sources.keys.each do | fname_path |
 
-  fname = fname_path.split('/').pop
-
   fin = open(fname_path)
 
   fin.each_with_index do |line, line_num|
     count += 1
-
-    doc = {
-            :id=>"#{fname}_#{line_num}", 
-            :file_name=>fname,
-            :line_number=>line_num,
-            :text=>line
-          }
-    resp = @@client.post @@solr_update_url, [doc].to_json, "Content-Type"=>"application/json"
+    @conn.prepared_update(@add_rec, [fname_path, line_num, line])
   end
 end
 duration = Time.now - start
