@@ -6,6 +6,7 @@ require 'traject'
 require 'traject/indexer/settings'
 require 'pp'
 require 'securerandom'
+require 'viaf'
 
 @@index_timer = 0
 
@@ -33,6 +34,7 @@ class Collator
     @conn = @db.get_conn();
     @source_rec_timer = 0
     @marc_hash_timer = 0
+    @viaf = Viaf.new()
   end
 
 
@@ -53,8 +55,10 @@ class Collator
         #use this HT rec as the base
         if !rec.has_key? 'text' 
           start = Time.now
-          base_marc = MARC::Record.new_from_hash(JSON.parse(s[:source]))
+          rec_json = JSON.parse(s[:source])
+          base_marc = MARC::Record.new_from_hash(rec_json)
           rec.merge!(@extractor.map_record(base_marc))
+          rec.merge!(normalize_viaf(rec_json))
           @marc_hash_timer = @marc_hash_timer + (Time.now - start)
         end
 
@@ -79,8 +83,10 @@ class Collator
     #we havent trajected into display fields, so we'll use the first
     if !rec.has_key? 'text' 
       start = Time.now
-      base_marc = MARC::Record.new_from_hash(JSON.parse(rec['source_records'][0]))
+      rec_json = JSON.parse(rec['source_records'][0])
+      base_marc = MARC::Record.new_from_hash(rec_json)
       rec.merge!(@extractor.map_record(base_marc))
+      rec.merge!(normalize_viaf(rec_json))
       @marc_hash_timer = @marc_hash_timer + (Time.now - start)
     end
 
@@ -89,6 +95,47 @@ class Collator
     rec['id'] = SecureRandom.uuid()
 
     return rec
+  end
+
+  #normalizes 110/260 fields and gets viaf_ids
+  def normalize_viaf source_json
+    #what we are building (kind of a dumb structure, but it's going into solr)
+    normalized_fields = {'publisher_viaf_ids'=>[], 'publisher_headings'=>[], 'publisher_normalized'=>[],
+                         'author_viaf_ids'=>[], 'author_headings'=>[], 'author_normalized'=>[],
+                         'author_addl_viaf_ids'=>[], 'author_addl_headings'=>[], 'author_addl_normalized'=>[]}
+                    
+    marc_fields = {"260"=>"publisher","110"=>"author","710"=>"author_addl"} #we're doing corporate author and publisher
+    marc_fields.keys.each do | fnum |
+      corp_fields = source_json["fields"].find {|f| f.has_key? fnum}
+      next if !corp_fields
+      corp_fields.each do | field_name, corp_field |
+        indicator = corp_field["ind1"].chomp    
+        subfields = []
+        corp_field["subfields"].each_with_index do |s, position|
+          if (fnum == "260" and s.keys[0] == "b") or fnum != "260"
+            subfields.push s.values[0].chomp
+          end
+        end
+        
+        viafs = @viaf.get_viaf( subfields ) #hash: viaf_id => normalized heading 
+      
+        if viafs.size > 0 
+          normalized_fields[marc_fields[fnum]+'_viaf_ids'] << viafs.keys
+          #get_viaf gave us the heading too
+          normalized_fields[marc_fields[fnum]+'_headings'] << viafs.values
+        end
+        #get_viaf already did this, but didn't return it. oops?
+        #normalize the subfields, then normalize the normalized subfields
+        normalized_fields[marc_fields[fnum]+'_normalized'] << normalize_corporate(subfields.map{ |sf| normalize_corporate(sf)}.join(' '), false) 
+      end #each matching field, e.g. multiple 710s or 260s.  
+      normalized_fields[marc_fields[fnum]+'_viaf_ids'].flatten!
+      normalized_fields[marc_fields[fnum]+'_headings'].flatten!
+      normalized_fields[marc_fields[fnum]+'_normalized'].flatten!
+      
+    end #each match for [260,110,710]
+    
+    return normalized_fields
+
   end
 
   def get_ht_id( rec )
