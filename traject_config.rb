@@ -71,8 +71,8 @@ to_field "author_facet",        extract_marc("100abcdq:110abcdgnu:111acdenqu:700
 
 
 #publisher
-to_field "publisher_t",         extract_marc("260b")
-#to_field "publisher_t",        extract_marc("260abef:261abef:262ab:264ab")
+#to_field "publisher_t",         extract_marc("260b")
+to_field "publisher_t",        extract_marc("260abef:261abef:262ab:264ab")
 
 #place of publication
 to_field "published_display",   extract_marc("260a:264|1*|abc", :trim_punctuation => true)
