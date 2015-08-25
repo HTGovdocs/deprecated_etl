@@ -1,3 +1,4 @@
+#deprecated. no longer keep this in solr
 require 'json'
 require 'httpclient'
 
