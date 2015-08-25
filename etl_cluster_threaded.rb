@@ -29,7 +29,7 @@ collators = []
     c = Collator.new()
     while foreman.status or !q.empty? 
       dupe_string, score, gd_ids = q.pop.chomp.split(/\t/)
-      if score < @cutoff 
+      if score.to_f < @cutoff 
         next
       end
       ids = gd_ids.split(',') 
