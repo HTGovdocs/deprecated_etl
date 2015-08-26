@@ -1,2 +1,6 @@
 sql/get_oclc_ec_clusters.sql
 .env
+*.log
+.*.swp
+.bundle
+*.tmp
