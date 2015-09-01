@@ -1,4 +1,12 @@
+0. mysql -hmysql-htprep -ujstever -p<pwd> --execute "use ht_repository; SELECT id, file_path FROM hathi_input_file;" --bat > data/sources.txt
+0b. nohup bundle exec ruby load_raw_source.rb data/sources.txt
+
 1. get oclc/enumchron dump from mysql
+
+1b. get dupe clusters without oclc numbers 
+    nohup bundle exec ruby cross_check_dupes.rb /htdata/govdocs/clusters/duplicates_20150827.tsv > dupes_no_oclc.txt
+2c. get solo clusters without oclc numbers
+    nohup bundle exec ruby cross_check_dupes.rb /htdata/govdocs/clusters/solos_20150827.tsv > solos_no_oclc.txt
 
 2. bundle exec ruby -J-Xmx8192m etl_oclc_threaded.rb <oclc_ec_data_clusters> <data_out> <num_threads (6)>
 

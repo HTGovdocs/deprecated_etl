@@ -25,6 +25,9 @@ collators = []
   collators << Thread.new do
     c = Collator.new()
     while foreman.status or !q.empty? 
+      if q.empty?
+        sleep(5)
+      end
       o_str_id, e_str_id, gd_ids = q.pop.chomp.split(/\t/)
       ids = gd_ids.split(',') 
 
