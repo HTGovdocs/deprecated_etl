@@ -6,18 +6,19 @@ require 'htph'
 @conn = @jdbc.get_conn()
 @add_rec = "INSERT INTO gd_source_recs
               (file_path, line_number, source, file_input_id)
-            VALUES(?,?,?, ?)"
+            VALUES(?,?,?,?)"
 
 @count = 0
 
 start = Time.now
 count = 0
 
-sources = JSON.parse(open(ARGV.shift, 'r').read)
+sources = open(ARGV.shift, 'r')
 
-sources.keys.each do | source_line |
+sources.each do | source_line |
   fid, fname_path = source_line.split("\t")
-  fname_path.gsub!(/\.gz/)
+  fname_path.chomp!.gsub!(/\.gz/, '')
+  puts fname_path
   fin = open(fname_path)
 
   fin.each_with_index do |line, line_num|
