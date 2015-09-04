@@ -1,8 +1,8 @@
 require 'thread'
 require 'collator'
 
-@fin = open(ARGV.shift)
-@fout = open(ARGV.shift, 'w')
+@fin = open(ARGV.shift) #oclc cluster file
+@fout = open(ARGV.shift, 'w') #oclc compiled file
 @num_collators = ARGV.shift
 @log = open(@num_collators+'.log','w')
 @count = 0
