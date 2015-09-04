@@ -1,17 +1,21 @@
-0. mysql -hmysql-htprep -ujstever -p<pwd> --execute "use ht_repository; SELECT id, file_path FROM hathi_input_file;" --bat > data/sources.txt
-0b. nohup bundle exec ruby load_raw_source.rb data/sources.txt
 
-1. get oclc/enumchron dump from mysql
+1. load raw source
+  mysql -hmysql-htprep -ujstever -p<pwd> --execute "use ht_repository; SELECT id, file_path FROM hathi_input_file;" --bat > data/sources.txt
+  nohup bundle exec ruby load_raw_source.rb data/sources.txt
 
-1b. get dupe clusters without oclc numbers 
+2. get oclc/enumchron dump from mysql
+  see sql/get_oclc_ec_clusters.sql
+
+3. get dupe/solo clusters without oclc numbers 
     nohup bundle exec ruby cross_check_dupes.rb /htdata/govdocs/clusters/duplicates_20150827.tsv > dupes_no_oclc.txt
-2c. get solo clusters without oclc numbers
-    nohup bundle exec ruby cross_check_dupes.rb /htdata/govdocs/clusters/solos_20150827.tsv > solos_no_oclc.txt
 
-2. bundle exec ruby -J-Xmx8192m etl_oclc_threaded.rb <oclc_ec_data_clusters> <data_out> <num_threads (6)>
+    nohup bundle exec ruby cross_check_solos.rb /htdata/govdocs/clusters/solos_20150827.tsv > solos_no_oclc.txt
 
-3. bundle exec ruby -J-Xmx8192m load.rb <data_out from step 2>
+4. compile records 
+  bundle exec ruby -J-Xmx8192m etl_oclc_threaded.rb oclc_ec_clusters.txt <data_out> <num_threads (6)>
+  bundle exec ruby -J-Xmx8192m etl_cluster_threaded.rb dupes_no_oclc.txt <data_out> <num threads (6)>
+  bundle exec ruby -J-Xmx8192m etl_solo_threaded.rb solos_no_oclc.txt <data_out> <num threads (6)>
 
-4. bundle exec ruby -J-Xmx8192m etl_cluster_threaded.rb <duplicate clusters> <data_out> <num threads (6)>
+5. load compiled data
+  bundle exec ruby -J-Xmx8192m load.rb <data_out from step 4>
 
-5. bundle exec ruby -J-Xmx8192m load.rb <data_out from step 4>
