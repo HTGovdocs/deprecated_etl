@@ -3,8 +3,9 @@ require 'httpclient'
 require 'pp'
 
 recs = open(ARGV.shift)
+log = open('load.log','w')
 chunk_size = 10
-solr_url = 'http://solr-sdr-usfeddocs-dev:9034/usfeddocs/update/json?'
+solr_url = 'http://solr-sdr-usfeddocs-dev:9035/usfeddocs/update/json?'
 rec_set = [] 
 chunk = ''
 client = HTTPClient.new
@@ -14,7 +15,13 @@ recs.each_with_index do | rec, rec_num |
   rec_set << rec
   if (rec_num+1) % chunk_size == 0 
     chunk = '['+rec_set.join(',')+']'
-    resp = client.post solr_url, chunk, "content-type"=>"application/json" 
+    begin
+      resp = client.post solr_url, chunk, "content-type"=>"application/json" 
+    rescue
+      sleep(2)
+      retry
+    end
+    log.puts rec_num
     chunk = ''
     rec_set = []
   end
