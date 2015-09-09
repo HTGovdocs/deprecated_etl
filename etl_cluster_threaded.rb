@@ -21,7 +21,7 @@ foreman = Thread.new do
   Thread.current.join
 end
 
-
+@write_mutex = Mutex.new
 
 collators = []
 @num_collators.to_i.times do |x| 
@@ -34,7 +34,10 @@ collators = []
       end
       ids = gd_ids.split(',') 
 
-      @fout.puts c.build_record(ids).to_json
+      out_rec = c.build_record(ids).to_json
+      @write_mutex.synchronize do 
+        @fout.puts out_rec 
+      end
     end
     @log.puts 'source_rec: '+c.source_rec_timer.to_s
     @log.puts 'marchash: '+c.marc_hash_timer.to_s
