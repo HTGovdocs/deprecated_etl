@@ -9,7 +9,8 @@ cluster_gd_ids = open(ARGV.shift)
 
 cluster_gd_ids.each do | line |
   line.chomp!
-  @conn.prepared_select(@get_oclc, [line.split(/\t/)[2]]) do | row |
+  sql = @get_oclc.gsub('?', line.split(/\t/)[2])
+  @conn.prepared_select(sql) do | row |
     count = row.get_object('c')
     if count.to_i == 0
       puts line
