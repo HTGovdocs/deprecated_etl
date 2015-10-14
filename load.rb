@@ -5,7 +5,7 @@ require 'pp'
 recs = open(ARGV.shift)
 log = open('load.log','w')
 chunk_size = 10
-solr_url = 'http://solr-sdr-usfeddocs-dev:9035/usfeddocs/update/json?'
+solr_url = 'http://solr-sdr-usfeddocs-dev:9035/usfeddocs/update/json?commit=true'
 rec_set = [] 
 chunk = ''
 client = HTTPClient.new
