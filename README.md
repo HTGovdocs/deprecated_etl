@@ -1,3 +1,7 @@
+# !!! No longer used. !!!
+
+See registry and transformation_logging repos. 
+
 # etl
 
 1. load raw source
